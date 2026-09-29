@@ -1,0 +1,114 @@
+<title>Ejemplo de referencia</title>
+<!--
+  Clip de referencia: ensena la sintaxis completa del motor.
+  Una sola forma que pasa por tres estados sin cortar nunca:
+  pildora -> terminal -> tarjeta de resultado.
+
+  Construir:  python3 $SKILL/engine/build.py motion/dist este-archivo.html
+  Revisar:    NODE_PATH=./motion/node_modules node $SKILL/engine/beats.js \
+                motion/dist/ejemplo-referencia.html motion/work/ej.png 0.9 3.0 4.5 6.2 7.5
+  Renderizar: NODE_PATH=./motion/node_modules node $SKILL/engine/render.js \
+                motion/dist/ejemplo-referencia.html motion/out/ejemplo.mp4 30
+
+  Lo que hay que copiar de aqui:
+  - Una unica forma en SH que cambia de tamano, esquinas y color.
+  - Una capa (.L) por estado, con tin/tout en el segundo de su palabra.
+  - El cursor hace clic justo cuando cambia el estado.
+  - Barras esqueleto en vez de cifras inventadas.
+-->
+<style>
+.mono{font-family:'Geist Mono',monospace}
+.sk{position:absolute;background:#D5D5FD;border-radius:6px}
+</style>
+
+<div data-slot="shape">
+
+  <!-- Estado 1: pildora -->
+  <div class="L" id="Lpill">
+    <div class="row" style="transform:translate(-50%,-50%);gap:18px;color:#fff;font-size:50px;font-weight:600;letter-spacing:-.02em">
+      <span id="icSpark"></span>Ejemplo
+    </div>
+  </div>
+
+  <!-- Estado 2: terminal con escritura -->
+  <div class="L" id="Lterm">
+    <div class="a mono" style="left:-380px;top:-120px;font-size:30px;color:#6C6C8E">~/proyecto</div>
+    <div class="a mono" id="typed" style="left:-380px;top:-58px;font-size:34px;color:#0A0A33;white-space:pre"></div>
+    <div class="a" id="caret" style="width:4px;height:38px;background:#0000F2"></div>
+  </div>
+
+  <!-- Estado 3: tarjeta de resultado -->
+  <div class="L" id="Ldone">
+    <div class="a" style="left:-330px;top:-140px;width:104px;height:104px;border-radius:26px;background:#0000F2">
+      <div class="a" id="icCheck" style="left:22px;top:22px"></div>
+    </div>
+    <div class="a" style="left:-190px;top:-128px;font-size:46px;font-weight:600;letter-spacing:-.025em;color:#0A0A33;white-space:nowrap">Terminado</div>
+    <div class="a" style="left:-188px;top:-64px;font-size:26px;color:#6C6C8E;white-space:nowrap">sin datos inventados</div>
+    <!-- Barras esqueleto: muestran proporcion, nunca una cifra que no se haya dicho -->
+    <div class="sk" id="sk1" style="left:-330px;top:30px;height:18px"></div>
+    <div class="sk" id="sk2" style="left:-330px;top:70px;height:18px"></div>
+    <div class="sk" id="sk3" style="left:-330px;top:110px;height:18px"></div>
+  </div>
+
+</div><!--/shape-->
+
+<script>
+const $ = id => document.getElementById(id);
+
+$('icSpark').innerHTML = M.icon('sparkle', 42, '#fff');
+$('icCheck').innerHTML = M.icon('check', 60, '#fff', 3.4);
+
+const CMD = 'analiza y prepara el resumen';
+const typeStart = 2.45, typeEnd = 4.35;
+
+// M.track: un valor que cambia de destino varias veces.
+// Las barras entran escalonadas, no todas a la vez.
+const w1 = M.track(0, [[6.25, 620, M.SLOW]]);
+const w2 = M.track(0, [[6.48, 520, M.SLOW]]);
+const w3 = M.track(0, [[6.70, 400, M.SLOW]]);
+
+M.scene({
+  W: 1920, H: 1080, bg: '#F2F2F2', T: 8.4,
+
+  // Los tres estados de la unica forma. cam: cuanto acerca la camara.
+  SH: {
+    pill: { w: 420, h: 122, r: 61, bg: '#0A0A33', cam: 1.85 },
+    term: { w: 880, h: 330, r: 30, bg: '#FFFFFF', cam: 1.35 },
+    done: { w: 820, h: 430, r: 34, bg: '#FFFFFF', cam: 1.28 }
+  },
+
+  // Cada cambio va en el segundo de su palabra hablada.
+  start: 'pill',
+  SEQ: [[2.15, 'term'], [5.9, 'done']],
+  intro: 0.18,
+
+  layers: [
+    { el: 'Lpill', tin: null, tout: 2.15 },
+
+    { el: 'Lterm', tin: 2.15, tout: 5.9, anchor: 'c', update: (t) => {
+      const p = M.clamp((t - typeStart) / (typeEnd - typeStart), 0, 1);
+      M.setText($('typed'), CMD.slice(0, Math.floor(p * CMD.length)));
+      const cs = $('caret').style;
+      if (t < typeStart - 0.05) { cs.opacity = 0; return; }
+      cs.opacity = (t > typeEnd && Math.floor((t - typeEnd) * 1.9) % 2 === 1) ? 0 : 1;
+      cs.left = (-380 + $('typed').offsetWidth + 6) + 'px';
+      cs.top = '-52px';
+    }},
+
+    { el: 'Ldone', tin: 5.9, tout: null, anchor: 'c', update: (t) => {
+      $('sk1').style.width = Math.max(0, w1(t)).toFixed(1) + 'px';
+      $('sk2').style.width = Math.max(0, w2(t)).toFixed(1) + 'px';
+      $('sk3').style.width = Math.max(0, w3(t)).toFixed(1) + 'px';
+    }}
+  ],
+
+  // Los clics caen en el mismo segundo que el cambio de estado.
+  // keys: [segundo, x, y] en pixeles de mundo. El cursor nunca sale del cuadro.
+  cursor: {
+    size: 44,
+    clicks: [2.15, 5.9],
+    keys: [[0,430,300],[1.55,430,300],[2.05,40,10],[2.35,40,10],
+           [3.0,-250,120],[5.2,-250,120],[5.78,-292,-142],[6.1,-292,-142],[7.4,320,200]]
+  }
+});
+</script>

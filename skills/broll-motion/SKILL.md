@@ -16,9 +16,9 @@ El usuario recibe clips sueltos para meter en su editor, un montaje de revision 
 | Carpeta | Que hay |
 |---|---|
 | `engine/` | `motion.js` (motor), `base.css`, `build.py` (clip a HTML autocontenido), `render.js` (render con motion blur), `beats.js` (hojas de fotogramas), fuentes Geist |
-| `scripts/` | `setup.sh`, `inspect_video.py`, `words.py`, `composite.py`, `make_pages.py` |
+| `scripts/` | `setup.sh`, `transcribe.py`, `inspect_video.py`, `words.py`, `composite.py`, `make_pages.py` |
 | `reference/engine-api.md` | Como se escribe un clip. **Leelo antes del primero.** |
-| `examples/` | Clips terminados: nivel de calidad y punto de partida |
+| `examples/` | Un clip de referencia con la sintaxis completa del motor |
 
 `$SKILL` es la carpeta de esta skill. Se trabaja siempre en una carpeta `motion/` dentro del proyecto del usuario.
 
@@ -30,9 +30,13 @@ El usuario recibe clips sueltos para meter en su editor, un montaje de revision 
 bash $SKILL/scripts/setup.sh ./motion
 ```
 
-Instala Playwright y Chromium en `motion/node_modules`. Todos los comandos del motor llevan `NODE_PATH=./motion/node_modules`.
+Instala Playwright y Chromium en `motion/node_modules` y crea `clips/`, `dist/`, `out/`, `work/` e `inputs/`. Todos los comandos del motor llevan `NODE_PATH=./motion/node_modules`.
+
+El script acepta rutas relativas y absolutas. Si termina con "Listo", el entorno esta preparado.
 
 En Linux, si Node y ffmpeg no estan en el PATH del sistema, exportalos antes de cualquier comando. `render.js` invoca `ffmpeg` por nombre y, si no lo encuentra, falla sin explicar la causa.
+
+La skill trae `.claude/settings.json` con permisos restrictivos (pide confirmacion antes de `rm`, `mv`, `curl` y `git push`). Si el usuario quiere aplicarlos a su proyecto, copialo a la raiz del proyecto; no lo hagas sin preguntar.
 
 ### 2. Brief
 
